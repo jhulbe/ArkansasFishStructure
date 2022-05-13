@@ -1,18 +1,29 @@
 
-$string1 = '<?xml version="1.0" ?>'
-$string2 = '<gpx creator="Esri" version="1.1" xalan="http://xml.apache.org/xalan" xmlns="http://www.topografix.com/GPX/1/1" xsi="http://www.w3.org/2001/XMLSchema-instance">'
-$string3 = '</gpx>'
+#downloads all files from AGFC in GPX format
 
-$files = (GCI C:\users\john\downloads\gpx\).name 
-$savefile = "C:\users\john\downloads\gpx\master.xml"
+$GPXFiles = (Invoke-WebRequest https://www.agfc.com/en/fishing/where-fish/fish-attractors/).links | ? { $_.innerhtml -like "*GPX*" }
 
-Foreach($file in $files){
-    $name = $file.replace(".gpx","")
-$content = (Get-content "C:\users\john\downloads\gpx\$file") |%{
-$_ -replace $string1 , ""`
--replace $string2 , ""`
--replace $string3 , ""`
--replace "<name> </name>","<name>$name</name>"
+Foreach ($file in $GPXFiles) {
+
+    $filename = ($file.href | Out-String)
+    $trim = $filename.substring($filename.Length - 9).trim()
+    $dest = "C:\users\John\Documents\scripts\AGFC\$trim" 
+    Invoke-WebRequest -uri ($File).href -OutFile $dest
+
 }
-add-content $savefile $content
+
+#Creates a new agfc master file
+
+New-Item C:\users\John\Documents\scripts\Agfc.gpx -ItemType file -ea 0
+
+#Grabs waypoints from each file and combines them into the master file
+
+Foreach ($GPX in $(Get-ChildItem C:\Users\John\Documents\scripts\AGFC)) {
+
+    $content = (get-content $GPX.fullname | select -Skip 3).replace('</gpx>', "")
+    Add-Content C:\users\John\Documents\scripts\Agfc.gpx -Value $content
+
 }
+
+
+
